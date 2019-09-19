@@ -11,15 +11,28 @@ if [ -z "${SERVER_RESET_QUERY}" ] &&  [ "$POOL_MODE" == "session" ]; then
   SERVER_RESET_QUERY="DISCARD ALL;"
 fi
 
+openssl req -new -x509 -days 365 -nodes -text -out server.crt \
+  -keyout server.key -subj "/CN=dbhost.yourdomain.com"
+
+# vendor server key files
+mv server.key /app/vendor/pgbouncer
+mv server.crt /app/vendor/pgbouncer
+
 cat >> /app/vendor/pgbouncer/pgbouncer.ini << EOFEOF
 [pgbouncer]
-listen_addr = 127.0.0.1
+listen_addr = ${PGBOUNCER_LISTEN_ADDRESS:-127.0.0.1}
 listen_port = 6000
 auth_type = md5
 auth_file = /app/vendor/pgbouncer/users.txt
+admin_users = ${PGBOUNCER_ADMIN_USERS}
 server_tls_sslmode = prefer
 server_tls_protocols = secure
 server_tls_ciphers = HIGH:!ADH:!AECDH:!LOW:!EXP:!MD5:!3DES:!SRP:!PSK:@STRENGTH
+client_tls_sslmode = prefer
+client_tls_key_file = /app/vendor/pgbouncer/server.key
+client_tls_cert_file = /app/vendor/pgbouncer/server.crt
+client_tls_protocols = secure
+client_tls_ciphers = HIGH:!ADH:!AECDH:!LOW:!EXP:!MD5:!3DES:!SRP:!PSK:@STRENGTH
 
 ; When server connection is released back to pool:
 ;   session      - after client disconnects
@@ -34,6 +47,7 @@ reserve_pool_size = ${PGBOUNCER_RESERVE_POOL_SIZE:-1}
 reserve_pool_timeout = ${PGBOUNCER_RESERVE_POOL_TIMEOUT:-5.0}
 server_lifetime = ${PGBOUNCER_SERVER_LIFETIME:-3600}
 server_idle_timeout = ${PGBOUNCER_SERVER_IDLE_TIMEOUT:-600}
+logfile = /app/vendor/pgbouncer/pgbouncer.log
 log_connections = ${PGBOUNCER_LOG_CONNECTIONS:-1}
 log_disconnections = ${PGBOUNCER_LOG_DISCONNECTIONS:-1}
 log_pooler_errors = ${PGBOUNCER_LOG_POOLER_ERRORS:-1}
@@ -61,6 +75,8 @@ do
   else
     export ${POSTGRES_URL}_PGBOUNCER=postgres://$DB_USER:$DB_PASS@127.0.0.1:6000/$CLIENT_DB_NAME
   fi
+
+  echo "PGBOUNCER URL for $POSTGRES_URL IS ${POSTGRES_URL}_PGBOUNCER"
 
   cat >> /app/vendor/pgbouncer/users.txt << EOFEOF
 "$DB_USER" "$DB_MD5_PASS"
