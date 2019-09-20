@@ -28,10 +28,10 @@ admin_users = ${PGBOUNCER_ADMIN_USERS}
 server_tls_sslmode = prefer
 server_tls_protocols = secure
 server_tls_ciphers = HIGH:!ADH:!AECDH:!LOW:!EXP:!MD5:!3DES:!SRP:!PSK:@STRENGTH
-:client_tls_sslmode = prefer
-:client_tls_key_file = /app/vendor/pgbouncer/server.key
-:client_tls_cert_file = /app/vendor/pgbouncer/server.crt
-:client_tls_protocols = secure
+;client_tls_sslmode = prefer
+;client_tls_key_file = /app/vendor/pgbouncer/server.key
+;client_tls_cert_file = /app/vendor/pgbouncer/server.crt
+;client_tls_protocols = secure
 ;client_tls_ciphers = HIGH:!ADH:!AECDH:!LOW:!EXP:!MD5:!3DES:!SRP:!PSK:@STRENGTH
 
 ; When server connection is released back to pool:
