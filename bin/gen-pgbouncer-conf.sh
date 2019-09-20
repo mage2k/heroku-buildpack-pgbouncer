@@ -28,11 +28,11 @@ admin_users = ${PGBOUNCER_ADMIN_USERS}
 server_tls_sslmode = prefer
 server_tls_protocols = secure
 server_tls_ciphers = HIGH:!ADH:!AECDH:!LOW:!EXP:!MD5:!3DES:!SRP:!PSK:@STRENGTH
-client_tls_sslmode = prefer
-client_tls_key_file = /app/vendor/pgbouncer/server.key
-client_tls_cert_file = /app/vendor/pgbouncer/server.crt
-client_tls_protocols = secure
-client_tls_ciphers = HIGH:!ADH:!AECDH:!LOW:!EXP:!MD5:!3DES:!SRP:!PSK:@STRENGTH
+:client_tls_sslmode = prefer
+:client_tls_key_file = /app/vendor/pgbouncer/server.key
+:client_tls_cert_file = /app/vendor/pgbouncer/server.crt
+:client_tls_protocols = secure
+;client_tls_ciphers = HIGH:!ADH:!AECDH:!LOW:!EXP:!MD5:!3DES:!SRP:!PSK:@STRENGTH
 
 ; When server connection is released back to pool:
 ;   session      - after client disconnects
@@ -71,9 +71,9 @@ do
 
   if [ "$PGBOUNCER_PREPARED_STATEMENTS" == "false" ]
   then
-    export ${POSTGRES_URL}_PGBOUNCER=postgres://$DB_USER:$DB_PASS@127.0.0.1:6000/$CLIENT_DB_NAME?prepared_statements=false
+    export ${POSTGRES_URL}_PGBOUNCER=postgres://$DB_USER:$DB_PASS@127.0.0.1:${PGBOUNCER_LISTEN_PORT}/$CLIENT_DB_NAME?prepared_statements=false
   else
-    export ${POSTGRES_URL}_PGBOUNCER=postgres://$DB_USER:$DB_PASS@127.0.0.1:6000/$CLIENT_DB_NAME
+    export ${POSTGRES_URL}_PGBOUNCER=postgres://$DB_USER:$DB_PASS@127.0.0.1:${PGBOUNCER_LISTEN_PORT}/$CLIENT_DB_NAME
   fi
 
   echo "PGBOUNCER URL for $POSTGRES_URL IS ${POSTGRES_URL}_PGBOUNCER"
@@ -81,6 +81,11 @@ do
   cat >> /app/vendor/pgbouncer/users.txt << EOFEOF
 "$DB_USER" "$DB_MD5_PASS"
 EOFEOF
+
+if [ "${PGBOUNCER_LISTEN_ADDRESS}" -ne "127.0.0.1" ]
+then
+  echo "PGBOUNCER will accept external connections @ postgres://$DB_USER:$DB_PASS@${PGBOUNCER_LISTEN_ADDRESS}:${PGBOUNCER_LISTEN_PORT}/$CLIENT_DB_NAME"
+fi
 
   cat >> /app/vendor/pgbouncer/pgbouncer.ini << EOFEOF
 $CLIENT_DB_NAME= host=$DB_HOST dbname=$DB_NAME port=$DB_PORT
